@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-bg: var(--bg);
+  --color-text: var(--text);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border-color);
+  --color-accent: var(--accent);
+  --color-accent-focus: var(--accent-focus);
+  --color-export-bg: var(--export-bg);
+  --color-export-btn: var(--export-btn);
+  --color-export-text: var(--export-text);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --bg: #EBE8E3;
+    --text: #242A35;
+    --surface: #F2F1EC;
+    --surface-rgb: 242, 241, 236;
+    --surface-muted: #E5E4DF;
+    --border-color: rgba(36, 42, 53, 0.2); /* Stronger border for light mode */
+    --accent: #5C89E5;
+    --accent-focus: #4A76D1;
+    --export-bg: #FFFFFF;
+    --export-btn: #5C89E5; /* Solid accent for the button */
+    --export-text: #FFFFFF;
+  }
+
+  :root.dark {
+    --bg: #242A35;
+    --text: #EBE6E0;
+    --surface: #2D3440;
+    --surface-rgb: 45, 52, 64;
+    --surface-muted: #232933;
+    --border-color: rgba(235, 230, 224, 0.3); /* Slightly stronger for better contour */
+    --accent: #5C89E5;
+    --accent-focus: #7AA1F0;
+    --export-bg: #1A1F26;
+    --export-btn: #5C89E5; /* Solid accent for the button */
+    --export-text: #FFFFFF;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .glass-card {
+    background-color: var(--surface);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .glass-card {
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-nav {
+    background-color: rgba(var(--surface-rgb), 0.7);
+    backdrop-filter: blur(32px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-header {
+    background-color: rgba(var(--surface-rgb), 0.8);
+    backdrop-filter: blur(32px);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+  }
+}

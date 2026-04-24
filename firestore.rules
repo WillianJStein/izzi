@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: uid
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - email: string (required, email format) - User's email
+    //   - displayName: string (optional) - User's display name
+    //   - photoURL: string (optional, url format) - User's photo URL
+    //   - themePreference: string (required, enum) - User's theme preference
+    //   - updatedAt: string (required, ISO 8601) - Last update date
+    //
+    // Collection: projects
+    // Document ID: projectId
+    // Fields:
+    //   - id: string (required) - Project ID
+    //   - ownerUid: string (required) - UID of the project owner
+    //   - name: string (required, max 100) - Project name
+    //   - client: string (required, max 100) - Client name
+    //   - type: string (required, enum) - Project type
+    //   - description: string (optional, max 5000) - Project description
+    //   - what: string (optional, max 2000) - What is the product/service?
+    //   - why: string (optional, max 2000) - Why is it being built?
+    //   - objectives: list (optional, max 50 items) - Project objectives
+    //   - requirements: list (optional, max 100 items) - List of requirements
+    //   - businessRules: list (optional, max 50 items) - List of business rules
+    //   - showBusinessRules: bool (optional) - Whether to show business rules
+    //   - stakeholders: list (optional, max 20 items) - Project stakeholders
+    //   - timeline: string (optional, max 200) - Estimated timeline
+    //   - budget: string (optional, max 200) - Estimated budget
+    //   - createdAt: string (required, ISO 8601) - Project creation date
+    //   - updatedAt: string (required, ISO 8601) - Last update date
+    //   - updatedBy: string (optional, max 200) - Name of the last user who updated
+    //   - lastChangeDescription: string (optional, max 1000) - Description of the last change
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "eng.civil.willian@gmail.com" && request.auth.token.email_verified == true) ||
+          (request.auth.token.email == "jefersontave@gmail.com" && request.auth.token.email_verified == true)
+        );
+    }
+
+    function isAllowedUser() {
+      return isAuthenticated() && 
+             (isAdmin() || request.auth.token.email in [
+               'eng.civil.willian@gmail.com',
+               'jefersontave@gmail.com',
+               'contatobaseu@gmail.com'
+             ]);
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'themePreference', 'updatedAt', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             (data.displayName == null || (data.displayName is string && data.displayName.size() < 100)) &&
+             (data.photoURL == null || isValidUrl(data.photoURL)) &&
+             (data.themePreference in ['light', 'dark', 'system']) &&
+             (data.role == null || data.role in ['admin', 'user']) &&
+             isValidDateString(data.updatedAt);
+    }
+
+    function isValidProject(data) {
+      return hasOnlyAllowedFields([
+               'id', 'ownerUid', 'name', 'client', 'type', 'description', 
+               'what', 'why', 'objectives', 'requirements', 'businessRules', 
+               'showBusinessRules', 'stakeholders', 'timeline', 'budget', 
+               'createdAt', 'updatedAt', 'updatedBy', 'lastChangeDescription'
+             ]) &&
+             data.id is string && data.id.size() > 0 &&
+             data.ownerUid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.client is string && data.client.size() <= 100 &&
+             data.type in ['sistema', 'website', 'automação'] &&
+             (data.description == null || (data.description is string && data.description.size() <= 5000)) &&
+             (data.what == null || (data.what is string && data.what.size() <= 2000)) &&
+             (data.why == null || (data.why is string && data.why.size() <= 2000)) &&
+             (data.objectives == null || (data.objectives is list && data.objectives.size() <= 50)) &&
+             (data.requirements == null || (data.requirements is list && data.requirements.size() <= 100)) &&
+             (data.businessRules == null || (data.businessRules is list && data.businessRules.size() <= 50)) &&
+             (data.showBusinessRules == null || data.showBusinessRules is bool) &&
+             (data.stakeholders == null || (data.stakeholders is list && data.stakeholders.size() <= 20)) &&
+             (data.timeline == null || (data.timeline is string && data.timeline.size() <= 200)) &&
+             (data.budget == null || (data.budget is string && data.budget.size() <= 200)) &&
+             isValidDateString(data.createdAt) &&
+             isValidDateString(data.updatedAt) &&
+             (data.updatedBy == null || (data.updatedBy is string && data.updatedBy.size() <= 200)) &&
+             (data.lastChangeDescription == null || (data.lastChangeDescription is string && data.lastChangeDescription.size() <= 1000));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAllowedUser() && isOwner(uid);
+      allow create: if isAllowedUser() && isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isAllowedUser() && isOwner(uid) && isValidUser(request.resource.data) && areImmutableFieldsUnchanged(['uid']);
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAllowedUser();
+      allow create: if isAllowedUser() && isValidProject(request.resource.data);
+      allow update: if isAllowedUser() && isValidProject(request.resource.data) && areImmutableFieldsUnchanged(['id', 'ownerUid', 'createdAt']);
+      allow delete: if isAllowedUser();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

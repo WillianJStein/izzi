@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User's email" },
+        "displayName": { "type": "string", "description": "User's display name" },
+        "photoURL": { "type": "string", "description": "User's photo URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation date" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Project data including requirements and business rules",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Project ID" },
+        "ownerUid": { "type": "string", "description": "UID of the project owner" },
+        "name": { "type": "string", "description": "Project name" },
+        "client": { "type": "string", "description": "Client name" },
+        "type": { "type": "string", "description": "Project type" },
+        "description": { "type": "string", "description": "Project description" },
+        "what": { "type": "string", "description": "What is the product/service?" },
+        "why": { "type": "string", "description": "Why is it being built?" },
+        "objectives": { "type": "array", "items": { "type": "string" }, "description": "Project objectives" },
+        "requirements": { "type": "array", "items": { "$ref": "Requirement" }, "description": "List of requirements" },
+        "businessRules": { "type": "array", "items": { "$ref": "BusinessRule" }, "description": "List of business rules" },
+        "showBusinessRules": { "type": "boolean", "description": "Whether to show business rules" },
+        "stakeholders": { "type": "array", "items": { "type": "string" }, "description": "Project stakeholders" },
+        "timeline": { "type": "string", "description": "Estimated timeline" },
+        "budget": { "type": "string", "description": "Estimated budget" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Project creation date" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update date" }
+      },
+      "required": ["id", "ownerUid", "name"]
+    },
+    "Requirement": {
+      "title": "Requirement",
+      "description": "A single project requirement with history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Requirement ID" },
+        "title": { "type": "string", "description": "Requirement title" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "priority": { "type": "string", "enum": ["baixa", "média", "alta"], "description": "Priority level" },
+        "type": { "type": "string", "enum": ["funcional", "não-funcional"], "description": "Requirement type" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation date" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update date" },
+        "history": { "type": "array", "items": { "$ref": "HistoryEntry" }, "description": "Change history" }
+      },
+      "required": ["id", "title", "description", "priority", "type", "createdAt"]
+    },
+    "BusinessRule": {
+      "title": "BusinessRule",
+      "description": "A single business rule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Rule ID" },
+        "description": { "type": "string", "description": "Rule description" }
+      },
+      "required": ["id", "description"]
+    },
+    "HistoryEntry": {
+      "title": "HistoryEntry",
+      "description": "A single entry in the change history",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time", "description": "Date of the change" },
+        "observation": { "type": "string", "description": "What was changed" }
+      },
+      "required": ["date", "observation"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Project documents"
+    }
+  }
+}
